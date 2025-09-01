@@ -35,7 +35,8 @@ class NewPostFragment : Fragment() {
         binding.ok.setOnClickListener{
             if(binding.content.text.isNotBlank()){
                 val content = binding.content.text.toString()
-                viewModel.changeContentAndSave(content)
+                viewModel.changeContent(content)
+                viewModel.save()
             }
         }
         return binding.root

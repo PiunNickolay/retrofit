@@ -39,7 +39,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun load() {
         _data.postValue(FeedModel(loading = true))
-        repository.getAllAsync(object : PostRepository.GetAllCallback {
+        object : PostRepository.GetAllCallback<List<Post>> {
             override fun onSuccess(posts: List<Post>) {
                 _data.value = (FeedModel(posts = posts, empty = posts.isEmpty()))
             }
@@ -47,34 +47,74 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             override fun onError(e: Throwable) {
                 _data.value = (FeedModel(error = e))
             }
-        })
+        }
     }
 
     val edited = MutableLiveData(empty)
     val draft = MutableLiveData<String?>()
     fun likeById(id: Long) {
-        thread {
-            repository.likeById(id)
-            load()
-        }
+        val currentState = _data.value ?: return
+        val posts = currentState.posts
+        val post = posts.find { it.id == id } ?: return
+        val likedByMe = post.likedByMe
+        repository.likeById(id, likedByMe, object : PostRepository.GetAllCallback<Post> {
+            override fun onSuccess(result: Post) {
+                val refreshState = _data.value ?: return
+                val updatedPosts = refreshState.posts.map {
+                    if (it.id == result.id) result else it
+                }
+                _data.postValue(refreshState.copy(posts = updatedPosts))
+            }
+
+
+            override fun onError(e: Throwable) {
+                _data.value
+            }
+        })
     }
 
     fun shareById(id: Long) = repository.shareById(id)
 
     fun removeById(id: Long) {
-        repository.removeById(id)
-        load()
+        val currentState = _data.value ?: return
+        _data.postValue(currentState.copy(posts = currentState.posts.filter { it.id != id }))
+
+        repository.removeById(id, object : PostRepository.GetAllCallback<Unit> {
+            override fun onSuccess(result: Unit) {
+
+            }
+
+            override fun onError(error: Throwable) {
+                _data.postValue(currentState)
+            }
+
+        })
     }
 
-    fun changeContentAndSave(text: String) {
-        edited.value?.let {
-            if (it.content != text) {
-                repository.save(it.copy(content = text))
-                load()
-                _postsCreated.postValue(Unit)
-            }
+    fun changeContent(content: String) {
+        val text = content.trim()
+        if (edited.value?.content == text) {
+            return
         }
-        edited.postValue(empty)
+        edited.value = edited.value?.copy(content = text)
+    }
+
+
+    fun save() {
+        edited.value?.let {
+            repository.save(it, object : PostRepository.GetAllCallback<Post> {
+                override fun onSuccess(result: Post) {
+
+                    _postsCreated.postValue(Unit)
+                }
+
+                override fun onError(e: Throwable) {
+                    _data.value
+
+                }
+            })
+        }
+        edited.value = empty
     }
 
     fun edit(post: Post) {
