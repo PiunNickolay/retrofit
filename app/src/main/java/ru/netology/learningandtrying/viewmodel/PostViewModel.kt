@@ -39,7 +39,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun load() {
         _data.postValue(FeedModel(loading = true))
-        object : PostRepository.GetAllCallback<List<Post>> {
+        repository.getAllAsync(object: PostRepository.GetAllCallback<List<Post>>{
             override fun onSuccess(posts: List<Post>) {
                 _data.value = (FeedModel(posts = posts, empty = posts.isEmpty()))
             }
@@ -47,7 +47,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             override fun onError(e: Throwable) {
                 _data.value = (FeedModel(error = e))
             }
-        }
+        })
     }
 
     val edited = MutableLiveData(empty)
@@ -68,7 +68,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
 
             override fun onError(e: Throwable) {
-                _data.value
+                _errorEvent.postValue(e.message ?: "Ошибка при лайке")
             }
         })
     }
@@ -109,7 +109,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 override fun onError(e: Throwable) {
-                    _data.value
+                    _errorEvent.postValue(e.message ?: "Ошибка при сохранении поста")
 
                 }
             })
@@ -124,4 +124,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelEdit() {
         edited.value = empty
     }
+
+    private val _errorEvent = SingleLiveEvent<String>()
+    val errorEvent: LiveData<String>
+        get() = _errorEvent
 }

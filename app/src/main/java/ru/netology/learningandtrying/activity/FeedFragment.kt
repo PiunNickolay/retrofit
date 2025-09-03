@@ -12,6 +12,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.activity.NewPostFragment.Companion.textArg
 import ru.netology.learningandtrying.adapter.OnInteractionListener
@@ -72,6 +73,7 @@ class FeedFragment : Fragment() {
             binding.errorText.text = state.errorToString(requireContext())
             binding.loading.isVisible = state.loading
             binding.empty.isVisible = state.empty
+            binding.swipeRefreshLayout.isRefreshing = state.loading
 
             if (state.isError){
                 Toast.makeText(
@@ -80,6 +82,14 @@ class FeedFragment : Fragment() {
                     Toast.LENGTH_LONG
                 ).show()
             }
+
+            binding.retry.setOnClickListener {
+                viewModel.load()
+            }
+        }
+
+        viewModel.errorEvent.observe(viewLifecycleOwner) { message ->
+            Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
