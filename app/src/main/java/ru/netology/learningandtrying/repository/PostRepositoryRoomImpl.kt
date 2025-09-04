@@ -1,6 +1,8 @@
 package ru.netology.learningandtrying.repository
 
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.map
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.learningandtrying.api.ApiService
@@ -11,123 +13,54 @@ import java.io.IOException
 import retrofit2.Callback
 import retrofit2.Call
 import retrofit2.Response
+import ru.netology.learningandtrying.api.PostApi
+import ru.netology.learningandtrying.entity.fromDtoToEntity
+import ru.netology.learningandtrying.entity.toDto
 
 class PostRepositoryRoomImpl(private val dao: PostDao) : PostRepository {
-
-    override fun get(): List<Post> {
-        val response = ApiService.service.getAll().execute()
-        if (!response.isSuccessful) {
-            throw RuntimeException("Response code: ${response.code()} ${response.message()}")
-        }
-        return response.body() ?: throw RuntimeException("Body is null")
+    override val data: LiveData<List<Post>> = dao.getAll().map {
+        it.toDto()
     }
 
-    override fun getAllAsync(callback: PostRepository.GetAllCallback<List<Post>>) {
-        ApiService.service.getAll()
-            .enqueue(object : Callback<List<Post>> {
-                override fun onResponse(call: Call<List<Post>>, response: Response<List<Post>>) {
-
-                    if (!response.isSuccessful) {
-                        callback.onError(RuntimeException("Response code: ${response.code()} ${response.message()}"))
-                        return
-                    }
-
-                    val body = response.body() ?: run {
-                        callback.onError(RuntimeException("Body is null"))
-                        return
-                    }
-                    callback.onSuccess(body)
-                }
-
-                override fun onFailure(call: Call<List<Post>>, throwable: Throwable) {
-                    callback.onError(throwable)
-                }
-
-            })
+    override suspend fun getAllAsync() {
+        val posts: List<Post> = ApiService.service.getAll()
+        dao.insert(posts.fromDtoToEntity())
     }
 
-    override fun likeById(id: Long, likedByMe: Boolean, callback: PostRepository.GetAllCallback<Post> ) {
-        val call = if (likedByMe) {
-            ApiService.service.dislikeById(id)
-        } else {
-            ApiService.service.likeById(id)
-        }
-        call.enqueue(object: Callback<Post>{
-            override fun onResponse(call: Call<Post>, response: Response<Post>) {
-                if (!response.isSuccessful){
-                    when(response.code()){
-                        404->callback.onError(RuntimeException("Post not found"))
-                        500->callback.onError(RuntimeException("Server error"))
-                        else->callback.onError(RuntimeException("Error: ${response.code()}"))
-                    }
-                    return
-                }
-                val body = response.body()
-                if (body == null){
-                    callback.onError(RuntimeException("Body is null"))
-                }else{
-                    callback.onSuccess(body)
-                }
+    override suspend fun likeById(id: Long, likedByMe: Boolean): Post {
+       dao.likeById(id)
+        return try {
+            val update = if (likedByMe) {
+                ApiService.service.dislikeById(id)
+            } else {
+                ApiService.service.likeById(id)
             }
-
-            override fun onFailure(call: Call<Post>, e: Throwable) {
-                callback.onError(e)
-            }
-
-        })
+            dao.insert(PostEntity.fromDto(update))
+            update
+        }catch (e: Exception){
+            dao.likeById(id)
+            throw e
+        }
     }
 
-    override fun shareById(id: Long) {
-        TODO()
+    override suspend fun removeById(id: Long) {
+        val post = dao.getById(id) ?: return
+        dao.removeById(id)
+        try {
+            ApiService.service.delete(id)
+        }catch (e: Exception){
+            dao.insert(post)
+            throw e
+        }
     }
 
-    override fun removeById(id: Long, callback: PostRepository.GetAllCallback<Unit>) {
-        ApiService.service.delete(id)
-            .enqueue(object: Callback<Unit>{
-                override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                    if (!response.isSuccessful){
-                        when (response.code()){
-                            404->callback.onError(RuntimeException("Post not found"))
-                            500->callback.onError(RuntimeException("Server error"))
-                            else->callback.onError(RuntimeException("Error: ${response.code()}"))
-                        }
-                        return
-                    }else {
-                        callback.onSuccess(Unit)
-                    }
-                }
-
-                override fun onFailure(call: Call<Unit>, e: Throwable) {
-                    callback.onError(e)
-                }
-
-            })
+    override suspend fun shareById(id: Long) {
+        TODO("Not yet implemented")
     }
 
-    override fun save(post: Post, callback: PostRepository.GetAllCallback<Post>) {
-        ApiService.service.save(post)
-            .enqueue(object: Callback<Post>{
-                override fun onResponse(call: Call<Post>, response: Response<Post>) {
-                    if (!response.isSuccessful){
-                        when(response.code()){
-                            404->callback.onError(RuntimeException("Post not found"))
-                            500->callback.onError(RuntimeException("Server error"))
-                            else->callback.onError(RuntimeException("Error: ${response.code()}"))
-                        }
-                        return
-                    }
-                    val body = response.body()
-                    if (body == null){
-                        callback.onError(RuntimeException("Body is null"))
-                    }else{
-                        callback.onSuccess(body)
-                    }
-                }
-
-                override fun onFailure(call: Call<Post>, e: Throwable) {
-                    callback.onError(e)
-                }
-
-            })
+    override suspend fun save(post: Post): Post {
+        TODO("Not yet implemented")
     }
+
+
 }

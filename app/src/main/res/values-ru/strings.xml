@@ -28,4 +28,7 @@
     <string name="empty">Пустой</string>
     <string name="unknown_error">Неизвестная ошибка</string>
     <string name="something_went_wrong">Что-то пошло не так</string>
+    <string name="error_not_found">Не найден</string>
+    <string name="error_server">Ошибка сервера</string>
+    <string name="error_loading">Ошибка загрузки</string>
 </resources>

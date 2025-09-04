@@ -30,7 +30,7 @@ class FeedFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val binding = FragmentFeedBinding.inflate(inflater, container, false)
-        val viewModel: PostViewModel by viewModels(ownerProducer = :: requireParentFragment)
+        val viewModel: PostViewModel by viewModels(ownerProducer = ::requireParentFragment)
         val adapter = PostsAdapter(object : OnInteractionListener {
             override fun onLike(post: Post) {
                 viewModel.likeById(post.id)
@@ -62,34 +62,35 @@ class FeedFragment : Fragment() {
 
             override fun onEdit(post: Post) {
                 viewModel.edit(post)
-                findNavController().navigate(R.id.action_feedFragment_to_newPostFragment,
+                findNavController().navigate(
+                    R.id.action_feedFragment_to_newPostFragment,
                     Bundle().apply { textArg = post.content })
             }
         })
         binding.list.adapter = adapter
-        viewModel.data.observe(viewLifecycleOwner){state->
-            adapter.submitList(state.posts)
-            binding.errorGroup.isVisible = state.isError
-            binding.errorText.text = state.errorToString(requireContext())
-            binding.loading.isVisible = state.loading
-            binding.empty.isVisible = state.empty
-            binding.swipeRefreshLayout.isRefreshing = state.loading
+        viewModel.data.observe(viewLifecycleOwner) { data ->
+            adapter.submitList(data.posts)
+            binding.empty.isVisible = data.empty
 
-            if (state.isError){
-                Toast.makeText(
-                    requireContext(),
-                    state.errorToString(requireContext()),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-
-            binding.retry.setOnClickListener {
-                viewModel.load()
-            }
         }
 
+        viewModel.state.observe(viewLifecycleOwner) { state ->
+            binding.loading.isVisible = state.loading
+            if (state.error) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.retry) {
+                        viewModel.load()
+                    }
+                    .show()
+                binding.swipeRefreshLayout.isRefreshing = state.refreshing
+            }
+        }
         viewModel.errorEvent.observe(viewLifecycleOwner) { message ->
-            Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+            Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+                .setAction(R.string.retry) {
+                    viewModel.load()
+                }
+                .show()
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
