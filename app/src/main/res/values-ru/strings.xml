@@ -31,4 +31,5 @@
     <string name="error_not_found">Не найден</string>
     <string name="error_server">Ошибка сервера</string>
     <string name="error_loading">Ошибка загрузки</string>
+    <string name="new_posts">Новые посты</string>
 </resources>

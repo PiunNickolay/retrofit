@@ -1,5 +1,6 @@
 package ru.netology.learningandtrying.activity
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -24,6 +25,7 @@ import ru.netology.learningandtrying.viewmodel.PostViewModel
 
 class FeedFragment : Fragment() {
 
+    @SuppressLint("StringFormatInvalid")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -91,6 +93,19 @@ class FeedFragment : Fragment() {
                     viewModel.load()
                 }
                 .show()
+        }
+
+        viewModel.newerCount.observe(viewLifecycleOwner){ count->
+            binding.newPostsButton.isVisible = count > 0
+            if (count > 0){
+                binding.newPostsButton.text = getString(R.string.new_posts, count)
+            }
+        }
+
+        binding.newPostsButton.setOnClickListener {
+            viewModel.showNewPosts()
+            binding.list.smoothScrollToPosition(0)
+            binding.newPostsButton.isVisible = false
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {

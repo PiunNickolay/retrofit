@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
+import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import ru.netology.learningandtrying.db.AppDb
 import ru.netology.learningandtrying.dto.Post
@@ -15,7 +17,10 @@ import ru.netology.learningandtrying.util.SingleLiveEvent
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import ru.netology.learningandtrying.R
+import ru.netology.learningandtrying.api.ApiService
 import ru.netology.learningandtrying.model.FeedModelState
 
 
@@ -32,12 +37,34 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositoryRoomImpl(
         AppDb.getIstance(application).postDao
     )
-    val data: LiveData<FeedModel> = repository.data.map {
-        FeedModel(
-            posts = it,
-            empty = it.isEmpty()
-        )
+    val data: LiveData<FeedModel> = repository.data.map { list: List<Post> -> FeedModel(list, list.isEmpty()) }
+        .catch { it.printStackTrace() }
+        .asLiveData(Dispatchers.Default)
+
+    private val _newPosts = MutableLiveData<List<Post>>(emptyList())
+    val newPosts: LiveData<List<Post>> = _newPosts
+    val newerCount = data.switchMap {
+        repository.getNewer(it.posts.firstOrNull()?.id ?: 0)
+            .map { count ->
+                if (count > 0) {
+                    val response = ApiService.service.getNewer(it.posts.firstOrNull()?.id ?: 0)
+                    _newPosts.postValue(response)
+                }
+                count
+            }
+            .catch { _state.postValue(FeedModelState(error = true)) }
+            .asLiveData(Dispatchers.Default)
     }
+
+    fun showNewPosts() {
+        viewModelScope.launch {
+            newPosts.value?.let {
+                repository.insertNewPosts(it)
+                _newPosts.value = emptyList()
+            }
+        }
+    }
+
     private val _state = MutableLiveData(FeedModelState())
     val state: LiveData<FeedModelState>
         get() = _state
@@ -51,11 +78,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun load() {
         _state.value = FeedModelState(loading = true)
-        viewModelScope.launch{
-            try{
+        viewModelScope.launch {
+            try {
                 repository.getAllAsync()
                 _state.value = FeedModelState()
-            }catch (_: Exception){
+            } catch (_: Exception) {
                 _state.value = FeedModelState(error = true)
             }
         }
@@ -64,8 +91,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun save() {
         viewModelScope.launch {
             edited.value?.let {
-                repository.save(it)
-                _postsCreated.value = Unit
+                try {
+                    repository.save(it)
+                    _postsCreated.value = Unit
+                } catch (e: Exception) {
+                    _errorEvent.value = getApplication<Application>()
+                        .getString(R.string.network_error)
+                }
             }
             edited.value = empty
         }
@@ -78,14 +110,14 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val post = data.value?.posts?.find { it.id == id } ?: return@launch
                 repository.likeById(post.id, post.likedByMe)
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 _errorEvent.value = getApplication<Application>()
                     .getString(R.string.network_error)
             }
         }
     }
 
-    fun shareById(id: Long){
+    fun shareById(id: Long) {
         TODO()
     }
 
@@ -118,11 +150,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() {
         _state.value = FeedModelState(refreshing = true)
-        viewModelScope.launch{
-            try{
+        viewModelScope.launch {
+            try {
                 repository.getAllAsync()
                 _state.value = FeedModelState()
-            }catch (_: Exception){
+            } catch (_: Exception) {
                 _state.value = FeedModelState(error = true)
             }
         }

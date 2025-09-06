@@ -1,42 +1,47 @@
 package ru.netology.learningandtrying.repository
 
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.lifecycle.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import ru.netology.learningandtrying.api.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import ru.netology.learningandtrying.api.ApiService
 import ru.netology.learningandtrying.dao.PostDao
 import ru.netology.learningandtrying.dto.Post
 import ru.netology.learningandtrying.entity.PostEntity
-import java.io.IOException
-import retrofit2.Callback
-import retrofit2.Call
-import retrofit2.Response
-import ru.netology.learningandtrying.api.PostApi
-import ru.netology.learningandtrying.entity.fromDtoToEntity
 import ru.netology.learningandtrying.entity.toDto
+import ru.netology.learningandtrying.entity.fromDtoToEntity
+import ru.netology.learningandtrying.error.AppError
+import ru.netology.learningandtrying.error.NetworkError
+import ru.netology.learningandtrying.error.UnknownError
+import java.io.IOException
 
 class PostRepositoryRoomImpl(private val dao: PostDao) : PostRepository {
-    override val data: LiveData<List<Post>> = dao.getAll().map {
-        it.toDto()
-    }
+    override val data = dao.getAll().map { it.map { it.toDto() } }
 
     override suspend fun getAllAsync() {
-        val posts: List<Post> = ApiService.service.getAll()
-        dao.insert(posts.fromDtoToEntity())
+        try {
+            val posts = ApiService.service.getAll()
+            dao.insert(posts.fromDtoToEntity())
+        }catch (e: IOException){
+            throw NetworkError
+        }catch (e: Exception){
+            throw UnknownError
+        }
     }
 
     override suspend fun likeById(id: Long, likedByMe: Boolean): Post {
        dao.likeById(id)
         return try {
-            val update = if (likedByMe) {
+            if (likedByMe) {
                 ApiService.service.dislikeById(id)
             } else {
                 ApiService.service.likeById(id)
             }
-            dao.insert(PostEntity.fromDto(update))
-            update
+            dao.getById(id)?.toDto() ?: throw RuntimeException("Post not found locally")
         }catch (e: Exception){
             dao.likeById(id)
             throw e
@@ -58,9 +63,24 @@ class PostRepositoryRoomImpl(private val dao: PostDao) : PostRepository {
         TODO("Not yet implemented")
     }
 
-    override suspend fun save(post: Post): Post {
-        TODO("Not yet implemented")
+    override suspend fun save(post: Post) {
+       try {
+           val posts = ApiService.service.save(post)
+           dao.insert(PostEntity.fromDto(posts))
+       }catch (e: IOException){
+           throw NetworkError
+       }catch (e: Exception){
+           throw UnknownError
+       }
     }
 
+    override fun getNewer(id: Long): Flow<Int> = flow {
+        delay(10_000)
+        val response = ApiService.service.getNewer(id)
+        emit(response.size)
+    }.catch { e -> throw AppError.from(e) }
 
+    suspend fun insertNewPosts(posts: List<Post>){
+        dao.insert(posts.fromDtoToEntity())
+    }
 }

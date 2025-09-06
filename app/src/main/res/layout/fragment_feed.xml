@@ -57,6 +57,21 @@
             app:barrierDirection="top" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/newPostsButton"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        android:text="@string/new_posts"
+        android:textColor="#FFFFFF"
+        app:icon="@drawable/ic_arrow_up_24"
+        app:iconGravity="textStart"
+        app:iconTint="@android:color/white"
+        app:backgroundTint="@color/tiffany" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
