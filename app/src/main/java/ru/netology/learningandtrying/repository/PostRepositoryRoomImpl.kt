@@ -74,13 +74,12 @@ class PostRepositoryRoomImpl(private val dao: PostDao) : PostRepository {
        }
     }
 
-    override fun getNewer(id: Long): Flow<Int> = flow {
-        delay(10_000)
+    override fun getNewer(id: Long): Flow<List<Post>> = flow {
         val response = ApiService.service.getNewer(id)
-        emit(response.size)
+        emit(response)
     }.catch { e -> throw AppError.from(e) }
 
-    suspend fun insertNewPosts(posts: List<Post>){
+    override suspend fun insertNewPosts(posts: List<Post>){
         dao.insert(posts.fromDtoToEntity())
     }
 }

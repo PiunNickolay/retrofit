@@ -6,7 +6,7 @@ import ru.netology.learningandtrying.dto.Post
 
 interface PostRepository {
     val data: Flow<List<Post>>
-    fun getNewer(id: Long): Flow<Int>
+    fun getNewer(id: Long): Flow<List<Post>>
     suspend fun getAllAsync()
     suspend fun likeById(id: Long, likedByMe: Boolean): Post
     suspend fun shareById(id: Long)

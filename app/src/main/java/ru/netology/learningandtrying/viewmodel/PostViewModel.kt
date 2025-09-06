@@ -43,14 +43,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _newPosts = MutableLiveData<List<Post>>(emptyList())
     val newPosts: LiveData<List<Post>> = _newPosts
+
     val newerCount = data.switchMap {
         repository.getNewer(it.posts.firstOrNull()?.id ?: 0)
-            .map { count ->
-                if (count > 0) {
-                    val response = ApiService.service.getNewer(it.posts.firstOrNull()?.id ?: 0)
-                    _newPosts.postValue(response)
-                }
-                count
+            .map { posts ->
+                _newPosts.postValue(posts)
+                posts.size
             }
             .catch { _state.postValue(FeedModelState(error = true)) }
             .asLiveData(Dispatchers.Default)
