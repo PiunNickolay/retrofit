@@ -75,8 +75,11 @@ class PostRepositoryRoomImpl(private val dao: PostDao) : PostRepository {
     }
 
     override fun getNewer(id: Long): Flow<List<Post>> = flow {
-        val response = ApiService.service.getNewer(id)
-        emit(response)
+        while (true) {
+            val response = ApiService.service.getNewer(id)
+            emit(response)
+            delay(10_000)
+        }
     }.catch { e -> throw AppError.from(e) }
 
     override suspend fun insertNewPosts(posts: List<Post>){
