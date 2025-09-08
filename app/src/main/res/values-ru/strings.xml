@@ -32,4 +32,7 @@
     <string name="error_server">Ошибка сервера</string>
     <string name="error_loading">Ошибка загрузки</string>
     <string name="new_posts">Новые посты</string>
+    <string name="removePhoto">Удалить фото</string>
+    <string name="save">Сохранить</string>
+    <string name="image_picker_error">Ошибка выбора фото</string>
 </resources>

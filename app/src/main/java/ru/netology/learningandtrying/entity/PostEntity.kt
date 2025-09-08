@@ -1,7 +1,9 @@
 package ru.netology.learningandtrying.entity
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import ru.netology.learningandtrying.dto.Attachment
 import ru.netology.learningandtrying.dto.Post
 
 
@@ -17,7 +19,9 @@ data class PostEntity(
     val likes: Int = 0,
     val shareCount: Int = 0,
     val viewCount: Int = 0,
-    val video: String? = null
+    val video: String? = null,
+    @Embedded
+    val attachment: Attachment?,
 ) {
     fun toDto() = Post(
         id = id,
@@ -26,7 +30,8 @@ data class PostEntity(
         content = content,
         published = published,
         likedByMe = likedByMe,
-        likes = likes
+        likes = likes,
+        attachment = attachment,
     ).apply {
         shareCount = this@PostEntity.shareCount
         viewCount = this@PostEntity.viewCount
@@ -45,6 +50,7 @@ data class PostEntity(
             post.shareCount,
             post.viewCount,
             post.video,
+            post.attachment
         )
     }
 }

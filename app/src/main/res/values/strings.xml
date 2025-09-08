@@ -33,4 +33,8 @@
     <string name="error_server">Server error</string>
     <string name="error_loading">Error loading</string>
     <string name="new_posts">New posts</string>
+    <string name="removePhoto">Remote photo</string>
+    <string name="save">Save</string>
+    <string name="image_picker_error">Image picker error</string>
+    <string name="image">Image</string>
 </resources>

@@ -1,11 +1,13 @@
 package ru.netology.learningandtrying.adapter
 
 import android.content.Intent
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.net.toUri
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.ListAdapter
@@ -13,6 +15,7 @@ import com.bumptech.glide.Glide
 import ru.netology.learningandtrying.Counts
 import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.databinding.CardPostBinding
+import ru.netology.learningandtrying.dto.AttachmentType
 import ru.netology.learningandtrying.dto.Post
 
 
@@ -102,6 +105,27 @@ class PostViewHolder(
             playButton.isClickable = true
         } else {
             binding.videoContainer.visibility = View.GONE
+        }
+
+        if (post.attachment != null && post.attachment.type == AttachmentType.IMAGE) {
+            val imageUrl = "http://10.0.2.2:9999/media/${post.attachment.url}"
+            binding.postImage.visibility = View.VISIBLE
+
+            Glide.with(binding.postImage)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_is_not_image_24)
+                .error(R.drawable.ic_error_24)
+                .timeout(10_000)
+                .into(binding.postImage)
+
+            binding.postImage.setOnClickListener {
+                val bundle = Bundle().apply {
+                    putString("url", imageUrl)
+                }
+                it.findNavController().navigate(R.id.action_feedFragment_to_imageFragment, bundle)
+            }
+        } else {
+            binding.postImage.visibility = View.GONE
         }
     }
 

@@ -1,6 +1,7 @@
 package ru.netology.learningandtrying.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.map
 import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.api.ApiService
 import ru.netology.learningandtrying.model.FeedModelState
+import ru.netology.learningandtrying.model.PhotoModel
+import java.io.File
 
 
 private val empty = Post(
@@ -32,6 +35,7 @@ private val empty = Post(
     likedByMe = false,
     likes = 0
 )
+private val noPhoto = PhotoModel()
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositoryRoomImpl(
@@ -40,6 +44,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     val data: LiveData<FeedModel> = repository.data.map { list: List<Post> -> FeedModel(list, list.isEmpty()) }
         .catch { it.printStackTrace() }
         .asLiveData(Dispatchers.Default)
+
+    private val _photo = MutableLiveData(noPhoto)
+    val photo: LiveData<PhotoModel>
+        get() = _photo
 
     private val _newPosts = MutableLiveData<List<Post>>(emptyList())
     val newPosts: LiveData<List<Post>> = _newPosts
@@ -74,6 +82,14 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         load()
     }
 
+    fun savePhoto(uri: Uri, file: File){
+        _photo.value = PhotoModel(uri, file)
+    }
+
+    fun removePhoto(){
+        _photo.value = null
+    }
+
     fun load() {
         _state.value = FeedModelState(loading = true)
         viewModelScope.launch {
@@ -90,7 +106,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             edited.value?.let {
                 try {
-                    repository.save(it)
+                    repository.save(it, _photo.value?.file)
                     _postsCreated.value = Unit
                 } catch (e: Exception) {
                     _errorEvent.value = getApplication<Application>()
