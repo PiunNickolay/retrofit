@@ -68,6 +68,15 @@ class FeedFragment : Fragment() {
                     R.id.action_feedFragment_to_newPostFragment,
                     Bundle().apply { textArg = post.content })
             }
+
+            override fun onImage(post: Post) {
+                val imageUrl = "http://10.0.2.2:9999/media/${post.attachment?.url}"
+                findNavController().navigate(
+                    R.id.action_feedFragment_to_imageFragment,
+                    Bundle().apply { putString("url", imageUrl) }
+                )
+            }
+
         })
         binding.list.adapter = adapter
         viewModel.data.observe(viewLifecycleOwner) { data ->
@@ -95,9 +104,9 @@ class FeedFragment : Fragment() {
                 .show()
         }
 
-        viewModel.newerCount.observe(viewLifecycleOwner){ count->
+        viewModel.newerCount.observe(viewLifecycleOwner) { count ->
             binding.newPostsButton.isVisible = count > 0
-            if (count > 0){
+            if (count > 0) {
                 binding.newPostsButton.text = getString(R.string.new_posts, count)
             }
         }

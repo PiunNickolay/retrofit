@@ -38,6 +38,18 @@ class NewPostFragment : Fragment() {
         binding.content.requestFocus()
         arguments?.textArg?.let(binding.content::setText)
 
+        binding.topAppBar.inflateMenu(R.menu.new_post_menu)
+        binding.topAppBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.save -> {
+                    viewModel.changeContent(binding.content.text.toString())
+                    viewModel.save()
+                    AndroidUtils.hideKeyboard(requireView())
+                    true
+                }
+                else -> false
+            }
+        }
 
         val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
             if (it.resultCode == ImagePicker.RESULT_ERROR){
@@ -54,25 +66,25 @@ class NewPostFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        requireActivity()
-            .addMenuProvider(
-                object : MenuProvider {
-                    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                        menuInflater.inflate(R.menu.new_post_menu, menu)
-                    }
-
-                    override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
-                        if (menuItem.itemId == R.id.save) {
-                            viewModel.changeContent(binding.content.text.toString())
-                            viewModel.save()
-                            AndroidUtils.hideKeyboard(requireView())
-                            true
-                        } else {
-                            false
-                        }
-                },
-                viewLifecycleOwner,
-            )
+//        requireActivity()
+//            .addMenuProvider(
+//                object : MenuProvider {
+//                    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+//                        menuInflater.inflate(R.menu.new_post_menu, menu)
+//                    }
+//
+//                    override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+//                        if (menuItem.itemId == R.id.save) {
+//                            viewModel.changeContent(binding.content.text.toString())
+//                            viewModel.save()
+//                            AndroidUtils.hideKeyboard(requireView())
+//                            true
+//                        } else {
+//                            false
+//                        }
+//                },
+//                viewLifecycleOwner,
+//            )
 
         viewModel.photo.observe(viewLifecycleOwner) {
             if (it.uri == null) {
@@ -86,6 +98,7 @@ class NewPostFragment : Fragment() {
 
         binding.removePhoto.setOnClickListener {
             viewModel.removePhoto()
+            binding.photo.setImageDrawable(null)
         }
 
         binding.takePhoto.setOnClickListener {

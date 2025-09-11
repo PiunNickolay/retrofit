@@ -25,6 +25,7 @@ interface OnInteractionListener{
     fun onEdit(post: Post)
     fun onRemove(post: Post)
     fun onPost(post: Post)
+    fun onImage(post: Post)
 }
 class PostsAdapter(
     private val onInteractionListener: OnInteractionListener
@@ -113,16 +114,11 @@ class PostViewHolder(
 
             Glide.with(binding.postImage)
                 .load(imageUrl)
-                .placeholder(R.drawable.ic_is_not_image_24)
-                .error(R.drawable.ic_error_24)
-                .timeout(10_000)
+                .centerCrop()
                 .into(binding.postImage)
 
             binding.postImage.setOnClickListener {
-                val bundle = Bundle().apply {
-                    putString("url", imageUrl)
-                }
-                it.findNavController().navigate(R.id.action_feedFragment_to_imageFragment, bundle)
+                onInteractionListener.onImage(post)
             }
         } else {
             binding.postImage.visibility = View.GONE
