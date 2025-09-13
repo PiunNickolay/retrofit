@@ -114,7 +114,8 @@ class PostViewHolder(
 
             Glide.with(binding.postImage)
                 .load(imageUrl)
-                .centerCrop()
+                .fitCenter()
+                .timeout(10000)
                 .into(binding.postImage)
 
             binding.postImage.setOnClickListener {

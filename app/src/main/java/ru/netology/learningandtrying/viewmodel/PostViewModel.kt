@@ -87,7 +87,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun removePhoto(){
-        _photo.value = null
+        _photo.value = noPhoto
     }
 
     fun load() {
