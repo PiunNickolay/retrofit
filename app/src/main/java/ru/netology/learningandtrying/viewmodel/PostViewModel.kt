@@ -19,9 +19,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.api.ApiService
+import ru.netology.learningandtrying.auth.AppAuth
 import ru.netology.learningandtrying.model.FeedModelState
 import ru.netology.learningandtrying.model.PhotoModel
 import java.io.File
@@ -29,6 +31,7 @@ import java.io.File
 
 private val empty = Post(
     id = 0,
+    authorId = 0,
     author = "",
     content = "",
     published = 0L,
@@ -41,8 +44,14 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositoryRoomImpl(
         AppDb.getIstance(application).postDao
     )
-    val data: LiveData<FeedModel> = repository.data.map { list: List<Post> -> FeedModel(list, list.isEmpty()) }
-        .catch { it.printStackTrace() }
+    val data: LiveData<FeedModel> = AppAuth.getInstance().state.flatMapLatest { token ->
+        repository.data
+            .map { posts ->
+                FeedModel(
+                    posts = posts.map { post -> post.copy(ownedByMe = token?.id == post.authorId) },
+                    empty = posts.isEmpty())
+            }
+    }
         .asLiveData(Dispatchers.Default)
 
     private val _photo = MutableLiveData(noPhoto)
@@ -82,11 +91,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         load()
     }
 
-    fun savePhoto(uri: Uri, file: File){
+    fun savePhoto(uri: Uri, file: File) {
         _photo.value = PhotoModel(uri, file)
     }
 
-    fun removePhoto(){
+    fun removePhoto() {
         _photo.value = noPhoto
     }
 

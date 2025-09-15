@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -76,6 +77,8 @@ class PostViewHolder(
             onInteractionListener.onShare(post)
         }
         share.isClickable = true
+
+        menu.isVisible = post.ownedByMe
 
         menu.setOnClickListener {
             PopupMenu(it.context, it).apply {

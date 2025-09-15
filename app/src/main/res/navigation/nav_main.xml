@@ -45,5 +45,10 @@
         android:name="ru.netology.learningandtrying.activity.ImageFragment"
         android:label="ImageFragment"
         tools:layout="@layout/fragment_image"/>
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="ru.netology.learningandtrying.activity.SignInFragment"
+        android:label="@string/sign_in"
+        tools:layout="@layout/fragment_sign_in"/>
 
 </navigation>

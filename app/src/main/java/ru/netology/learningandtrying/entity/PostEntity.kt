@@ -11,6 +11,7 @@ import ru.netology.learningandtrying.dto.Post
 data class PostEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
+    val authorId: Long,
     val author: String,
     val authorAvatar: String,
     val content: String,
@@ -25,6 +26,7 @@ data class PostEntity(
 ) {
     fun toDto() = Post(
         id = id,
+        authorId = authorId,
         author = author,
         authorAvatar = authorAvatar,
         content = content,
@@ -41,6 +43,7 @@ data class PostEntity(
     companion object {
         fun fromDto(post: Post) = PostEntity(
             post.id,
+            post.authorId,
             post.author,
             post.authorAvatar,
             post.content,

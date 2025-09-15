@@ -35,4 +35,12 @@
     <string name="removePhoto">Удалить фото</string>
     <string name="save">Сохранить</string>
     <string name="image_picker_error">Ошибка выбора фото</string>
+    <string name="image">Картинка</string>
+    <string name="new_post">Новый пост</string>
+    <string name="sign_in">Войти</string>
+    <string name="sign_up">Зарегестрироваться</string>
+    <string name="logout">Выйти</string>
+    <string name="password">Пароль</string>
+    <string name="login">Логин</string>
+    <string name="loginError">Логин введён некорректно</string>
 </resources>

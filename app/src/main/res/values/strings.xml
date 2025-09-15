@@ -38,4 +38,10 @@
     <string name="image_picker_error">Image picker error</string>
     <string name="image">Image</string>
     <string name="new_post">New post</string>
+    <string name="sign_in">Sign in</string>
+    <string name="sign_up">Sign up</string>
+    <string name="logout">Logout</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="loginError">The username is specified incorrectly</string>
 </resources>
