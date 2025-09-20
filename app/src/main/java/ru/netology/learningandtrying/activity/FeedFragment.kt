@@ -7,7 +7,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -18,8 +20,10 @@ import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.activity.NewPostFragment.Companion.textArg
 import ru.netology.learningandtrying.adapter.OnInteractionListener
 import ru.netology.learningandtrying.adapter.PostsAdapter
+import ru.netology.learningandtrying.auth.AppAuth
 import ru.netology.learningandtrying.databinding.FragmentFeedBinding
 import ru.netology.learningandtrying.dto.Post
+import ru.netology.learningandtrying.viewmodel.AuthViewModel
 import ru.netology.learningandtrying.viewmodel.PostViewModel
 
 
@@ -118,12 +122,28 @@ class FeedFragment : Fragment() {
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
+            binding.swipeRefreshLayout.isRefreshing = false
             viewModel.load()
         }
 
         binding.fab.setOnClickListener {
             viewModel.cancelEdit()
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)
+        }
+        (requireActivity() as AppCompatActivity).setSupportActionBar(binding.topAppBarFeed)
+        binding.topAppBarFeed.inflateMenu(R.menu.auth_menu)
+        binding.topAppBarFeed.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.signin, R.id.signup -> {
+                    findNavController().navigate(R.id.action_feedFragment_to_signInFragment)
+                    true
+                }
+                R.id.logout -> {
+                    AppAuth.getInstance().removeAuth()
+                    true
+                }
+                else -> false
+            }
         }
         return binding.root
     }
