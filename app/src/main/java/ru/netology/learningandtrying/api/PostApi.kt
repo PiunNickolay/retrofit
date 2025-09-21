@@ -24,6 +24,7 @@ import ru.netology.learningandtrying.auth.AppAuth
 import ru.netology.learningandtrying.dto.Post
 import java.util.concurrent.TimeUnit
 import ru.netology.learningandtrying.dto.Media
+import ru.netology.learningandtrying.dto.PushToken
 import ru.netology.learningandtrying.model.Token
 
 interface AuthApi {
@@ -84,6 +85,8 @@ interface PostApi {
     @POST("media")
     suspend fun uploadFile(@Part file: MultipartBody.Part): Media
 
+    @POST("users/push-tokens")
+    suspend fun sendPushToken(@Body token: PushToken)
 }
 
 object ApiService {

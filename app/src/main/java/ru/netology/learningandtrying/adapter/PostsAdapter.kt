@@ -60,7 +60,6 @@ class PostViewHolder(
             .circleCrop()
             .into(binding.avatar)
         author.text = post.author
-//        published.text = post.published
         content.text = post.content
         like.apply {
             isChecked = post.likedByMe

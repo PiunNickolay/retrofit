@@ -12,6 +12,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import ru.netology.learningandtrying.R
+import ru.netology.learningandtrying.auth.AppAuth
 import kotlin.random.Random
 
 class FCMService : FirebaseMessagingService() {
@@ -31,19 +32,48 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        val recipientId = message.data["recipientId"]?.toLongOrNull()
         val actionStr = message.data["action"] ?: return
         val content = message.data["content"] ?: return
 
-        val action = runCatching { Action.valueOf(actionStr) }.getOrNull()
-        when (action) {
-            Action.LIKE -> handleLike(Gson().fromJson(content, Like::class.java))
-            Action.NEW_POST -> handleNewPost(Gson().fromJson(content, NewPost::class.java))
-            null -> android.util.Log.w("FCM", "Unknown action: $actionStr")
+        val myId = AppAuth.getInstance().state.value?.id
+
+        when {
+            recipientId == null || recipientId == myId -> {
+                val action = runCatching { Action.valueOf(actionStr ?: "") }.getOrNull()
+                when (action) {
+                    Action.LIKE -> handleLike(Gson().fromJson(content, Like::class.java))
+                    Action.NEW_POST -> handleNewPost(Gson().fromJson(content, NewPost::class.java))
+                    null -> showNotification(content)
+                }
+            }
+            recipientId == 0L || recipientId != myId -> {
+                AppAuth.getInstance().sendPushToken()
+            }
         }
     }
 
     override fun onNewToken(token: String) {
-        println("FCM Token: $token")
+        AppAuth.getInstance().sendPushToken(token = token)
+    }
+
+    private fun showNotification(content: String) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) return
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(this)
+            .notify(Random.nextInt(100_000), notification)
     }
 
     private fun handleLike(like: Like) {
@@ -115,4 +145,9 @@ data class NewPost(
     val authorName: String,
     val text: String,
     val published: String
+)
+
+data class PushMessage(
+    val recipientId: Long?,
+    val content: String
 )
