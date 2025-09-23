@@ -13,6 +13,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import ru.netology.learningandtrying.R
 import ru.netology.learningandtrying.auth.AppAuth
+import ru.netology.learningandtrying.dto.Push
 import kotlin.random.Random
 
 class FCMService : FirebaseMessagingService() {
@@ -32,20 +33,13 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        val recipientId = message.data["recipientId"]?.toLongOrNull()
-        val actionStr = message.data["action"] ?: return
-        val content = message.data["content"] ?: return
-
+        val push = Gson().fromJson(message.data["content"], Push::class.java)
+        val recipientId = push.recipientId
         val myId = AppAuth.getInstance().state.value?.id
 
         when {
             recipientId == null || recipientId == myId -> {
-                val action = runCatching { Action.valueOf(actionStr ?: "") }.getOrNull()
-                when (action) {
-                    Action.LIKE -> handleLike(Gson().fromJson(content, Like::class.java))
-                    Action.NEW_POST -> handleNewPost(Gson().fromJson(content, NewPost::class.java))
-                    null -> showNotification(content)
-                }
+                showNotification(push.content)
             }
             recipientId == 0L || recipientId != myId -> {
                 AppAuth.getInstance().sendPushToken()
